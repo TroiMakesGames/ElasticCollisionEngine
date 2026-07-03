@@ -85,7 +85,7 @@ class Ball():
                 if mag < self.radius * 2:
                     #do overlap adjustments
                     #adjustment of one ball = 1/2 of overlap; overlap = radius - mag
-                    overlap = (self.radius * 2) - mag + 1e-12   # + 1e-12 to avoid double collision (both balls procces a collision) which prevents sticking
+                    overlap = (self.radius * 2) - mag
                     normalizedVecTo = (vecTo[0] / (mag + 1e-12), vecTo[1] / (mag + 1e-12))  # + 1e-12 to avoid division by zero
 
                     self.pos = (self.pos[0] + normalizedVecTo[0] * (overlap * 0.5), self.pos[1] + normalizedVecTo[1] * (overlap * 0.5))
@@ -244,23 +244,24 @@ def rotatePointsAroundCenter(points, center, angle_degrees):
 #VARIABLE INITIALIZATION -----------------------------------------------------------------------------------------------------------------------------------------
 
 physicsSubsteps = 8
+targetFrameRate = 60
 gravity = (0, 10)               #gravity (side view)
 drag = 1                        #drag through air (usefull for top down view with no gravity)
-bounceDamping = 0.8             #energy loss on bounce with shape edge or screen edge
+bounceDamping = 0.99             #energy loss on bounce with shape edge or screen edge
 
 balls = []
 shapes = []
 edges = []
 
-numOfBalls = 10
+numOfBalls = 25
 for i in range(numOfBalls):
     newBall = Ball((screenWidth/2 + random.uniform(0, 0.1), screenHeight/2 + random.uniform(0, 0.1)), random.randint(4, 12), drag, gravity, bounceDamping)
 
 r = 150
 cX = screenWidth/2
 cY = screenHeight/2
-rotationSpeed = 0.5
-shape = Shape((cX, cY), [(cX + 1 * r, cY + 0 * r),(cX + 0.5 * r, cY + 0.866025 * r),(cX + -0.5 * r, cY + 0.866025 * r),(cX + -1 * r, cY + 0 * r),(cX + -0.5 * r, cY + -0.866025 * r),(cX + 0.5 * r, cY + -0.866025 * r)], 3, False, False)
+rotationSpeed = 60
+shape = Shape((cX, cY), [(cX + 1 * r, cY + 0 * r),(cX + 0.5 * r, cY + 0.866025 * r),(cX + -0.5 * r, cY + 0.866025 * r),(cX + -1 * r, cY + 0 * r),(cX + -0.5 * r, cY + -0.866025 * r),(cX + 0.5 * r, cY + -0.866025 * r)], 3, False, True)
 
 #get initial ticks
 prevT = pygame.time.get_ticks()
@@ -274,6 +275,11 @@ while running:
     currT = pygame.time.get_ticks()
     dTms = currT - prevT
     dTs = dTms / 1000.0
+
+    #if dts is fucked for more than 3 frames reset it to one frame (prevents lag spike weird physics reactions but delays for a couple of frames)
+    if dTs > (targetFrameRate / 1000) * 3:
+        dTs = targetFrameRate / 1000
+
     sub_dTs = dTs / physicsSubsteps
 
     #fill screen
@@ -293,8 +299,9 @@ while running:
     if mouseButtons[0]:
         ...
     """
-
-    shape.rotate(rotationSpeed * dTs * 60)
+    
+    for i in range(physicsSubsteps):
+        shape.rotate(rotationSpeed * sub_dTs)
     
     #reload edges
     edges = []
@@ -322,7 +329,7 @@ while running:
     displayFPS(screen, 25)
     pygame.display.flip()
 
-    clock.tick(60)
+    clock.tick(targetFrameRate)
 
     #update delta time
     prevT = currT
