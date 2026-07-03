@@ -81,11 +81,16 @@ class Ball():
             if otherBall != self:
                 #get dist to other
                 vecTo = (self.pos[0] - otherBall.pos[0], self.pos[1] - otherBall.pos[1])
-                mag = math.sqrt(vecTo[0] ** 2 + vecTo[1] ** 2)
-                if mag < self.radius * 2:
+                magCheck = vecTo[0] * vecTo[0] + vecTo[1] * vecTo[1]                        #the optimised mag for the distance check (avoids sqrt)
+                radiusSum = self.radius + otherBall.radius
+                if magCheck < radiusSum * radiusSum:
+
+                    #calculate correct mag once its known its needed
+                    mag = math.sqrt(vecTo[0] * vecTo[0] + vecTo[1] * vecTo[1])
+
                     #do overlap adjustments
                     #adjustment of one ball = 1/2 of overlap; overlap = radius - mag
-                    overlap = (self.radius * 2) - mag
+                    overlap = (self.radius * 2) - mag + 1e-12  # + 1e-12 to avoid ball sticking
                     normalizedVecTo = (vecTo[0] / (mag + 1e-12), vecTo[1] / (mag + 1e-12))  # + 1e-12 to avoid division by zero
 
                     self.pos = (self.pos[0] + normalizedVecTo[0] * (overlap * 0.5), self.pos[1] + normalizedVecTo[1] * (overlap * 0.5))
@@ -100,7 +105,7 @@ class Ball():
 
                     #self
                     numerator = vDot(vDiff, vecTo)
-                    denominator = mag ** 2
+                    denominator = mag * mag
                     dVA = vMul(vecTo, numerator / denominator)
                     self.vel = vSum(self.vel, dVA)
 
@@ -132,9 +137,9 @@ class Ball():
 
             #check if ball close enough to be colliding
             vecTo = (self.pos[0] - closestPoint[0], self.pos[1] - closestPoint[1])
-            distance_sq = vecTo[0] ** 2 + vecTo[1] ** 2
+            distance_sq = vecTo[0] * vecTo[0] + vecTo[1] * vecTo[1]
 
-            if distance_sq <= self.radius ** 2:
+            if distance_sq <= self.radius * self.radius:
                 """pygame.draw.circle(screen, (0, 0, 255), closestPoint, 5)"""
                 
                 #adjust overlap
@@ -255,7 +260,7 @@ edges = []
 
 numOfBalls = 25
 for i in range(numOfBalls):
-    newBall = Ball((screenWidth/2 + random.uniform(0, 0.1), screenHeight/2 + random.uniform(0, 0.1)), random.randint(4, 12), drag, gravity, bounceDamping)
+    newBall = Ball((screenWidth/2 + random.uniform(0, 0.1), screenHeight/2 + random.uniform(0, 0.1)), random.randint(6, 12), drag, gravity, bounceDamping)
 
 r = 150
 cX = screenWidth/2
