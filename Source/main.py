@@ -90,7 +90,7 @@ class Ball():
 
                     #do overlap adjustments
                     #adjustment of one ball = 1/2 of overlap; overlap = radius - mag
-                    overlap = (self.radius * 2) - mag + 1e-12  # + 1e-12 to avoid ball sticking
+                    overlap = (self.radius + otherBall.radius) - mag + 1e-12  # + 1e-12 to avoid ball sticking
                     normalizedVecTo = (vecTo[0] / (mag + 1e-12), vecTo[1] / (mag + 1e-12))  # + 1e-12 to avoid division by zero
 
                     self.pos = (self.pos[0] + normalizedVecTo[0] * (overlap * 0.5), self.pos[1] + normalizedVecTo[1] * (overlap * 0.5))
@@ -250,23 +250,32 @@ def rotatePointsAroundCenter(points, center, angle_degrees):
 
 physicsSubsteps = 8
 targetFrameRate = 60
-gravity = (0, 10)               #gravity (side view)
+gravity = (0, 0)               #gravity (side view)
 drag = 1                        #drag through air (usefull for top down view with no gravity)
-bounceDamping = 0.99             #energy loss on bounce with shape edge or screen edge
+bounceDamping = 1             #energy loss on bounce with shape edge or screen edge
 
 balls = []
 shapes = []
 edges = []
 
+"""
 numOfBalls = 25
 for i in range(numOfBalls):
     newBall = Ball((screenWidth/2 + random.uniform(0, 0.1), screenHeight/2 + random.uniform(0, 0.1)), random.randint(6, 12), drag, gravity, bounceDamping)
+"""
 
+newBall1 = Ball((screenWidth/2 - 180, screenHeight/2), 6, drag, gravity, bounceDamping)
+newBall2 = Ball((screenWidth/2 + 180, screenHeight/2), 12, drag, gravity, bounceDamping)
+
+newBall1.applyForce((5, 0))
+
+"""
 r = 150
 cX = screenWidth/2
 cY = screenHeight/2
 rotationSpeed = 60
 shape = Shape((cX, cY), [(cX + 1 * r, cY + 0 * r),(cX + 0.5 * r, cY + 0.866025 * r),(cX + -0.5 * r, cY + 0.866025 * r),(cX + -1 * r, cY + 0 * r),(cX + -0.5 * r, cY + -0.866025 * r),(cX + 0.5 * r, cY + -0.866025 * r)], 3, False, True)
+"""
 
 #get initial ticks
 prevT = pygame.time.get_ticks()
@@ -305,8 +314,10 @@ while running:
         ...
     """
     
+    """
     for i in range(physicsSubsteps):
         shape.rotate(rotationSpeed * sub_dTs)
+    """
     
     #reload edges
     edges = []
