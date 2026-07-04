@@ -1,0 +1,23 @@
+Currently the simulation of elastic collision between balls runs on O(n**2) time complexity, as each ball checks for collisions with each other ball
+
+using simple spacial partitioning we can reduce the checks to a local area
+    the world is divided into a grid of cells, where each cell is preferably the size of the radius of the largest ball * 2
+        note that in cases where the sizes of balls vary drasticaly the optimisation is weakened to the weakest link - largest ball
+
+    before any ball collision in a physics substep, each ball is added to a cell at its position (basicaly finding what cell the ball is in)
+
+    after all balls are set, when doing the collision check for one ball, only balls from its own cell and the neighboruing 8 cells need to be checked
+    as collisions only happen localy
+
+    for the data type a 2D array can be used, but a dictionary is better as empty cells can be skipped, reducing the total variable size
+        additionaly, the dictionary allows for a dynamic world size instead of a predefined grid size from a set world size
+    each dictionary addres, the cooridnates of a cell as a tuple, stores an array of the balls inside the cell
+        when checking for collisions within a ball, any neighbrougin cell coordinate that does not exist in the dictionary can simply be skipped as it doesnt contain any balls
+
+the second method of optimisation (stackable with the spacial partitioning) is removing double collision checks between a pair of balls
+    a collision is made up of 2 actors, 2 balls, where each of the balls computes a collision check, even if the other ball in the pair has already done a check
+    to prevent the extra computation each ball can only perform a check with balls further down the array (higher ID)
+        as all balls with a lesser ID (further back in the array) have already done a check with this particular ball
+        python has a cool thing 'id(object)' whcih generates an ID based on addres location
+
+    this halves the number of checks that are done to the minimum required number
