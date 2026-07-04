@@ -21,11 +21,12 @@ def displayFPS(screen, font_size):
 #CLASS DEFINITION -----------------------------------------------------------------------------------------------------------------------------------------
 
 class Ball():
-    def __init__(self, pos, radius, drag, gravity, bounceDamping):
+    def __init__(self, pos, radius, mass, drag, gravity, bounceDamping):
         balls.append(self)
 
         self.pos = pos
         self.radius = radius
+        self.mass = mass
 
         self.vel = (0, 0)
         self.drag = drag                            #drag through air (usefull for top down view with no gravity)
@@ -36,7 +37,7 @@ class Ball():
         pygame.draw.circle(screen, (255, 255, 255), self.pos, self.radius, 1)
 
     def applyForce(self, force):
-        self.vel = (self.vel[0] + force[0], self.vel[1] + force[1])
+        self.vel = (self.vel[0] + force[0] / self.mass, self.vel[1] + force[1] / self.mass)
 
     def move(self, dTs):
         #apply gravity  (adding to both components for acces to non downward gravity)
@@ -102,15 +103,19 @@ class Ball():
 
                     #math for getting the new velocities - The Coding Train "Elastic Collision in 2D": https://www.youtube.com/watch?v=dJNFPv9Mj-Y
                     vDiff = vSub(otherBall.vel, self.vel)
+                    massSum = self.mass + otherBall.mass
 
                     #self
                     numerator = vDot(vDiff, vecTo)
                     denominator = mag * mag
-                    dVA = vMul(vecTo, numerator / denominator)
+
+                    massRatio = (otherBall.mass * 2) / massSum
+                    dVA = vMul(vMul(vecTo, numerator / denominator), massRatio)
                     self.vel = vSum(self.vel, dVA)
 
                     #other
-                    dVB = vMul(vecTo, -numerator / denominator)
+                    massRatio = (self.mass * 2) / massSum
+                    dVB = vMul(vMul(vecTo, -numerator / denominator), massRatio)
                     otherBall.vel = vSum(otherBall.vel, dVB)
 
                     #apply bounce damping
@@ -250,32 +255,24 @@ def rotatePointsAroundCenter(points, center, angle_degrees):
 
 physicsSubsteps = 8
 targetFrameRate = 60
-gravity = (0, 0)               #gravity (side view)
+gravity = (0, 10)               #gravity (side view)
 drag = 1                        #drag through air (usefull for top down view with no gravity)
-bounceDamping = 1             #energy loss on bounce with shape edge or screen edge
+bounceDamping = 0.99             #energy loss on bounce with shape edge or screen edge
 
 balls = []
 shapes = []
 edges = []
 
-"""
 numOfBalls = 25
 for i in range(numOfBalls):
-    newBall = Ball((screenWidth/2 + random.uniform(0, 0.1), screenHeight/2 + random.uniform(0, 0.1)), random.randint(6, 12), drag, gravity, bounceDamping)
-"""
+    size = random.randint(6, 12)
+    newBall = Ball((screenWidth/2 + random.uniform(0, 0.1), screenHeight/2 + random.uniform(0, 0.1)), size, size, drag, gravity, bounceDamping)
 
-newBall1 = Ball((screenWidth/2 - 180, screenHeight/2), 6, drag, gravity, bounceDamping)
-newBall2 = Ball((screenWidth/2 + 180, screenHeight/2), 12, drag, gravity, bounceDamping)
-
-newBall1.applyForce((5, 0))
-
-"""
 r = 150
 cX = screenWidth/2
 cY = screenHeight/2
 rotationSpeed = 60
 shape = Shape((cX, cY), [(cX + 1 * r, cY + 0 * r),(cX + 0.5 * r, cY + 0.866025 * r),(cX + -0.5 * r, cY + 0.866025 * r),(cX + -1 * r, cY + 0 * r),(cX + -0.5 * r, cY + -0.866025 * r),(cX + 0.5 * r, cY + -0.866025 * r)], 3, False, True)
-"""
 
 #get initial ticks
 prevT = pygame.time.get_ticks()
@@ -314,10 +311,8 @@ while running:
         ...
     """
     
-    """
     for i in range(physicsSubsteps):
         shape.rotate(rotationSpeed * sub_dTs)
-    """
     
     #reload edges
     edges = []
@@ -329,8 +324,6 @@ while running:
     for i in range(physicsSubsteps):
         for ball in balls:              #the move() and draw() are not in the same loop as the order matters (do X iterations of physics substeps, then draw)
             ball.move(sub_dTs)
-
-        for ball in balls:
             ball.doBallCollision(balls)
             ball.doEdgeCollision(edges)
 
