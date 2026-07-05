@@ -75,9 +75,19 @@ class Ball():
         if doDamping:
             self.vel = (self.vel[0] * self.bounceDamping, self.vel[1] * self.bounceDamping)
 
-    def doBallCollision(self, balls):
+    def doBallCollision(self, ballGrid, cellSize):
+        #get an array of active possible collidable balls from the spacial partitioning grid
+        neighbouringCoords = [(-1, 0), (-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (0, 0)]
+        gridPos = (self.pos[0] // cellSize, self.pos[1] // cellSize)
+        localBalls = []
+        for neighbroCoord in neighbouringCoords:
+            neighbouringCell = (gridPos[0] + neighbroCoord[0], gridPos[1] + neighbroCoord[1])
+
+            if neighbouringCell in ballGrid:
+                localBalls.extend(ballGrid[neighbouringCell])
+
         #check if coliding with any ball
-        for ball in balls:
+        for ball in localBalls:
             otherBall = ball
             if otherBall != self and id(self) < id(otherBall):
                 #get dist to other
@@ -251,6 +261,16 @@ def rotatePointsAroundCenter(points, center, angle_degrees):
 
     return newPoints
 
+#spacial partitioning grid stuff
+def addToGrid(ball, grid, cellSize):
+    #get ball position in grid
+    gridPos = (ball.pos[0] // cellSize, ball.pos[1] // cellSize)
+
+    #add to dict, create new array if first ball or just append if not
+    if gridPos not in grid:
+        grid[gridPos] = []
+    grid[gridPos].append(ball)
+
 #VARIABLE INITIALIZATION -----------------------------------------------------------------------------------------------------------------------------------------
 
 physicsSubsteps = 8
@@ -263,7 +283,11 @@ balls = []
 shapes = []
 edges = []
 
-numOfBalls = 100
+#spacial partitioning
+cellSize = 12 * 2 #max possible radius * 2
+ballGrid = {}
+
+numOfBalls = 50
 for i in range(numOfBalls):
     size = random.randint(6, 12)
     newBall = Ball((screenWidth/2 + random.uniform(0, 0.1), screenHeight/2 + random.uniform(0, 0.1)), size, size, drag, gravity, bounceDamping)
@@ -288,10 +312,8 @@ while running:
     dTs = dTms / 1000.0
 
     #if dts is fucked for more than 3 frames reset it to one frame (prevents lag spike weird physics reactions but delays for a couple of frames)
-    """
     if dTs > (targetFrameRate / 1000) * 3:
         dTs = targetFrameRate / 1000
-    """
 
     sub_dTs = dTs / physicsSubsteps
 
@@ -324,9 +346,14 @@ while running:
 
     #physics
     for i in range(physicsSubsteps):
+        #clear previous grid and fill new positions for the ball spacial partitioning optimisation
+        ballGrid.clear()
+        for ball in balls:
+            addToGrid(ball, ballGrid, cellSize)
+
         for ball in balls:              #the move() and draw() are not in the same loop as the order matters (do X iterations of physics substeps, then draw)
             ball.move(sub_dTs)
-            ball.doBallCollision(balls)
+            ball.doBallCollision(ballGrid, cellSize)
             ball.doEdgeCollision(edges)
 
     #draw
