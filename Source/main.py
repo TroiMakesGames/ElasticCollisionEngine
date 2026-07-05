@@ -79,7 +79,7 @@ class Ball():
         #check if coliding with any ball
         for ball in balls:
             otherBall = ball
-            if otherBall != self:
+            if otherBall != self and id(self) < id(otherBall):
                 #get dist to other
                 vecTo = (self.pos[0] - otherBall.pos[0], self.pos[1] - otherBall.pos[1])
                 magCheck = vecTo[0] * vecTo[0] + vecTo[1] * vecTo[1]                        #the optimised mag for the distance check (avoids sqrt)
@@ -263,7 +263,7 @@ balls = []
 shapes = []
 edges = []
 
-numOfBalls = 25
+numOfBalls = 100
 for i in range(numOfBalls):
     size = random.randint(6, 12)
     newBall = Ball((screenWidth/2 + random.uniform(0, 0.1), screenHeight/2 + random.uniform(0, 0.1)), size, size, drag, gravity, bounceDamping)
@@ -288,8 +288,10 @@ while running:
     dTs = dTms / 1000.0
 
     #if dts is fucked for more than 3 frames reset it to one frame (prevents lag spike weird physics reactions but delays for a couple of frames)
+    """
     if dTs > (targetFrameRate / 1000) * 3:
         dTs = targetFrameRate / 1000
+    """
 
     sub_dTs = dTs / physicsSubsteps
 
